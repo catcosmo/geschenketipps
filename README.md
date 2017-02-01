@@ -8,7 +8,7 @@ install gems:
 $bundle install
 
 migrate tables:
-$rake db:migrate (or bundle exec rake db:seed)
+$rake db:migrate (or bundle exec rake db:migrate)
 
 fill the database
 $rake db:seed (or bundle exec rake db:seed)
