@@ -1,0 +1,66 @@
+# This file should contain all the record creation needed to seed the database with its default values.
+# The data can then be loaded with the rake db:seed (or created alongside the db with db:setup).
+#
+# Examples:
+#
+#   cities = City.create([{ name: 'Chicago' }, { name: 'Copenhagen' }])
+#   Mayor.create(name: 'Emanuel', city: cities.first)
+require 'hippie_csv'
+
+
+import_dir = "#{Rails.root}/db/import"
+files = {}
+Dir.foreach(import_dir) do |item|
+  next if (item == '.') || (item == '..') || !(item =~ /.csv$/)
+  files[item] = HippieCSV.read("#{import_dir}/#{item}")
+end
+
+statuses = {}
+
+files.each do |file_name, parsed_rows|
+  statuses[file_name] = {}
+  data_source = DataSource.find_or_create_by(csv_file_name: file_name)
+  parsed_rows.each do |row|
+    row.map! { |col| col.strip unless col.nil? }
+    gift = data_source.gifts.create(name: row[0], year: row[1], month: row[2], day: row[3], value: row[4], value_under_25_euro: row[5], value_over_25_euro: row[6], fate: row[7], success: row[8], abr: row[9])
+  end
+  statuses[file_name][:gifts_created] = true
+  puts "#{data_source.gifts.count} Gifts created! from #{file_name}"
+
+  ministry_abr = data_source.gifts.pluck(:abr).uniq
+  if ministry_abr.count == 1
+    data_source.ministry = Ministry.find_or_create_by(abbreviation: ministry_abr[0])
+    data_source.save
+    puts "Saved Ministry #{ministry_abr[0]}"
+    statuses[file_name][:ministry_created] = true
+  else
+    puts "ERROR in #{file_name}: ABR in one DATA Source should all be the same! but we got: #{ministry_abr.inspect}"
+
+    statuses[file_name][:ministry_created] = false
+  end
+end
+
+puts 'statuses'
+statuses.each do |file, status|
+  status_line = []
+  failed = false
+  status.each do |name, success|
+    if success
+      status_line << "#{name}: success"
+    else
+      status_line << "#{name}: failed"
+      failed = true
+    end
+  end
+  if failed
+    puts "#{file}: failed! #{status_line.join(', ')}"
+  else
+    puts "#{file}: success"
+  end
+end
+
+
+# file = File.read("#{Rails.root}/db/import/aa13002.csv")
+
+# parsed_csv = CSV.parse(file.gsub(/\r/,''))
+# puts parsed_csv.inspect

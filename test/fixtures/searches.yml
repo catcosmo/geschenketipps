@@ -1,0 +1,15 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  keywords: MyString
+  ministry: MyString
+  max_price: MyString
+  successfull: false
+  popular: false
+
+two:
+  keywords: MyString
+  ministry: MyString
+  max_price: MyString
+  successfull: false
+  popular: false
